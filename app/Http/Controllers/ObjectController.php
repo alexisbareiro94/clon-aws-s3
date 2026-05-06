@@ -46,8 +46,8 @@ class ObjectController extends Controller
     public function update(UpdateObjectRequest $request, $bucket, Objecto $objecto)
     {
         Gate::authorize('update', $objecto);
-        $data = $request->validated();
-        $objecto->update($data);
+
+        $objecto->update($request->validated());
 
         return $request->wantsJson() ?
             response()->json([
