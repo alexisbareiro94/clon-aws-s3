@@ -68,4 +68,14 @@ class Objecto extends Model
     {
         return $this->hasMany(ObjectDownloadEvent::class, 'object_id');
     }
+
+    public function scopeSearch($query, $q)
+    {
+        if (!$q) return $query;
+
+        return $query->where(function ($query) use ($q) {
+            $query->where('original_name', 'ilike', "%{$q}%")
+                ->orWhere('mime_type', 'ilike', "%{$q}%");
+        });
+    }
 }

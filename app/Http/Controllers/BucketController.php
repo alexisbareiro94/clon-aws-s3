@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\DeleteBucketRequest;
+use App\Http\Requests\StoreBucketRequest;
 use App\Http\Requests\UpdateBucketRequest;
 use App\Jobs\DeleteBucketFiles;
 use App\Models\Bucket;
@@ -16,11 +18,26 @@ class BucketController extends Controller
     {
         Gate::authorize('viewAny', Bucket::class);
 
-        $cacheKey = 'buckets_user_'.auth()->id();
+        $cacheKey = 'buckets_user_' . auth()->id() . '_q_' . ($request->q ?? 'all');
 
         $buckets = Cache::remember($cacheKey, 300, function () {
             return Bucket::where('user_id', auth()->id())->get();
         });
+
+        if ($request->q) {
+            $buckets = $buckets->filter(function ($bucket) use ($request) {
+                return stripos($bucket->name, $request->q) !== false;
+            });
+        }
+
+        if ($request->ajax()) {
+            $html = view('bucket.partials.buckets-table', compact('buckets'))->render();
+
+            return response()->json([
+                'success' => true,
+                'html' => $html,
+            ]);
+        }
 
         return $request->expectsJson() ?
             response()->json($buckets) :
@@ -34,19 +51,14 @@ class BucketController extends Controller
         return view('bucket.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreBucketRequest $request)
     {
-        Gate::authorize('create', Bucket::class);
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'min:3', 'max:120'],
-            'visibility' => ['required', 'string', 'in:pr,pu'],
-        ]);
-        Cache::forget('buckets_user_'.auth()->id());
+        Cache::forget('buckets_user_' . auth()->id());
 
         $bucket = Bucket::create([
             'user_id' => auth()->id(),
-            'name' => $validated['name'],
-            'visibility' => $validated['visibility'],
+            'name' => $request->validated('name'),
+            'visibility' => $request->validated('visibility'),
         ]);
 
         return $request->wantsJson() ?
@@ -55,7 +67,7 @@ class BucketController extends Controller
                 'message' => "Bucket \"{$bucket->name}\" creado con éxito.",
             ]) :
             redirect()->route('bucket.show', $bucket)
-                ->with('success', "Bucket \"{$bucket->name}\" creado con éxito.");
+            ->with('success', "Bucket \"{$bucket->name}\" creado con éxito.");
     }
 
     // Route::get('/{bucket:slug}'
@@ -65,12 +77,9 @@ class BucketController extends Controller
         $q = $request->q ?? '';
         $query = $bucket->objectos()
             ->with(['shareLinks', 'bucket'])
-            ->where(function($query) use ($q) {
-                $query->where('original_name', 'ilike', "%{$q}%")
-                    ->orWhere('mime_type', 'ilike', "%{$q}%");
-            });
+            ->search($q);
 
-        $objects = $query->latest()->paginate(20)->withQueryString();
+        $objects = $query->latest()->paginate(20);
         $total = $objects->total();
         $totalBytes = $bucket->objectos()->sum('size_bytes');
 
@@ -79,7 +88,6 @@ class BucketController extends Controller
 
             return response()->json([
                 'success' => true,
-                'objects' => $objects,
                 'html' => $html,
             ]);
         }
@@ -120,25 +128,11 @@ class BucketController extends Controller
             redirect()->back()->with('success', 'Bucket actualizado correctamente');
     }
 
-    public function destroy(Bucket $bucket, Request $request)
+    public function destroy(DeleteBucketRequest $request, Bucket $bucket)
     {
-        Gate::authorize('delete', $bucket);
-        try {
-            $request->validate([
-                'name' => 'required|string|in:'.$bucket->name,
-                'confirm' => 'required|accepted',
-            ]);
-        } catch (\Exception $e) {
-            return $request->wantsJson() ?
-                response()->json([
-                    'success' => false,
-                    'message' => $e->getMessage(),
-                ], 422)
-                : redirect()->back()->with('error', 'Debes confirmar la eliminación escribiendo el nombre y activando el interruptor.');
-        }
         $name = $bucket->name;
         $bucket->delete();
-        Cache::forget('buckets_user_'.auth()->id());
+        Cache::forget('buckets_user_' . auth()->id());
         DeleteBucketFiles::dispatch($bucket->slug);
 
         return $request->wantsJson() ?
@@ -147,6 +141,6 @@ class BucketController extends Controller
                 'message' => "Bucket \"{$name}\" eliminado.",
             ])
             : redirect()->route('bucket.index')
-                ->with('success', "Bucket \"{$name}\" eliminado.");
+            ->with('success', "Bucket \"{$name}\" eliminado.");
     }
 }
