@@ -13,7 +13,7 @@ if (searchInput) {
                 const res = await axios.get(`/${bucketSlug}?q=${q}`, {
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
+                        // 'Accept': 'application/json'
                     }
                 });
 

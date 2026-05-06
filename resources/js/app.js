@@ -1,9 +1,10 @@
 import './bootstrap';
 import './auth';
-import './delete-objecto'
-import './search-objects'
-import './show-object'
-import './toast'
-import './shared-object'
-import './user-settings'
-import './bucket-settings'    
+import './delete-objecto';
+import './search-objects';
+import './show-object';
+import './toast';
+import './shared-object';
+import './user-settings';
+import './bucket-settings';
+import './search-buckets';

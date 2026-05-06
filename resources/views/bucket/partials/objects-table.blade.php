@@ -12,18 +12,7 @@
         </td>
         <td class="p-3 text-gray-500">{{ $object->updated_at->format('d/m/Y H:i') }}</td>
         <td class="p-3 text-gray-500">
-            @php
-                $b = $object->size_bytes;
-                if ($b >= 1073741824) {
-                    echo round($b / 1073741824, 2) . ' GB';
-                } elseif ($b >= 1048576) {
-                    echo round($b / 1048576, 2) . ' MB';
-                } elseif ($b >= 1024) {
-                    echo round($b / 1024, 2) . ' KB';
-                } else {
-                    echo $b . ' B';
-                }
-            @endphp
+            {{ formatBytes($object->size_bytes) }}
         </td>
         <td class="p-3 text-gray-500">
             {{ $object->visibility == 'pr' ? 'Privado' : 'Público' }}
