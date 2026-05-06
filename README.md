@@ -1,58 +1,102 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Clon-S3
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Clon de Amazon S3 (Simple Storage Service) construido con Laravel 13. Sistema de almacenamiento de objetos con API REST compatible con los conceptos fundamentales de S3.
 
-## About Laravel
+## Características
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Buckets**: Contenedores para organizar objetos
+- **Objetos**: Archivos almacenados con metadatos, versiones y checksums
+- **Control de Acceso**: Sistema de claves de acceso estilo AWS (access key/secret key)
+- **Enlaces Compartidos**: Generación de URLs temporales para compartir archivos
+- **Visibilidad**: Soporte para buckets y objetos públicos o privados
+- **Historial de Descargas**: Registro de eventos de descarga
+- **Versionamiento**: Control de versiones de objetos
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Requisitos
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP 8.3+
+- Laravel 13
+- Composer
+- Node.js + npm
+- Redis (para cola de trabajos)
 
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Instalación
 
 ```bash
-composer require laravel/boost --dev
+# Instalar dependencias
+composer install
 
-php artisan boost:install
+# Copiar archivo de entorno
+cp .env.example .env
+
+# Generar clave de aplicación
+php artisan key:generate
+
+# Ejecutar migraciones
+php artisan migrate
+
+# Instalar dependencias frontend
+npm install
+npm run build
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+## Configuración
 
-## Contributing
+Configura las siguientes variables en tu archivo `.env`:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```env
+QUEUE_CONNECTION=redis
+FILESYSTEM_DISK=local
+```
 
-## Code of Conduct
+## Ejecutar en Desarrollo
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+# Modo desarrollo completo (servidor + queue + logs + vite)
+composer run dev
 
-## Security Vulnerabilities
+# O manualmente
+php artisan serve
+npm run dev
+php artisan queue:listen
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## API Endpoints
 
-## License
+### Buckets
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/oss/buckets` | Listar buckets |
+| POST | `/api/oss/buckets` | Crear bucket |
+| GET | `/api/oss/{slug}` | Ver bucket |
+| PUT | `/api/oss/{slug}` | Actualizar bucket |
+| DELETE | `/api/oss/{slug}` | Eliminar bucket |
+
+### Objetos
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/oss/{bucket}/{objeto}` | Ver objeto |
+| GET | `/api/oss/{bucket}/{objeto}/view` | Descargar/ver archivo |
+| POST | `/api/oss/{bucket}/object` | Subir objeto |
+| PUT | `/api/oss/{bucket}/{objeto}` | Actualizar objeto |
+| DELETE | `/api/oss/{bucket}/{objeto}` | Eliminar objeto |
+
+### Autenticación
+
+El proyecto utiliza Laravel Sanctum para autenticación API.
+
+## Estructura de Base de Datos
+
+- **users**: Usuarios del sistema
+- **buckets**: Contenedores de objetos
+- **objects**: Archivos almacenados
+- **object_versions**: Versiones de objetos
+- **bucket_access_keys**: Claves de acceso API
+- **object_share_links**: Enlaces compartidos
+- **object_download_events**: Registro de descargas
+
+## Licencia
+
+MIT License
